@@ -20,6 +20,17 @@ structure expectations.
 
 ## Validation
 
+Every non-pointer field is required. This means that to unmarshal JSON data,
+type compatible non zero value must be provided. All fields with `json` tag
+`omitempty` are not required as they were pointer types.
+
+Empty containers (slice, map) is considered empty value.
+
+Container of pointer values is not required while at least one element for
+container of non pointer values must provided to successfully unmarshal.
+
+
+
 Although package provides strict type checking, it does not validate
 unmarshaled content. Any data validation must be done manually.
 

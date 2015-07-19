@@ -13,15 +13,23 @@ func (errs Errors) WithErr(err error) Errors {
 }
 
 func (errs Errors) WithNotAllowed(field string) Errors {
-	return append(errs, &NotAllowedError{field})
+	return append(errs, &NotAllowedError{
+		Path: field,
+	})
 }
 
 func (errs Errors) WithRequired(field string) Errors {
-	return append(errs, &RequiredError{field})
+	return append(errs, &RequiredError{
+		Path: field,
+	})
 }
 
 func (errs Errors) WithInvalidType(field, got string, expected reflect.Type) Errors {
-	return append(errs, &RequiredError{field})
+	return append(errs, &InvalidTypeError{
+		Path:     field,
+		Got:      got,
+		Expected: expected,
+	})
 }
 
 // String provides pretty list of all errors combined
@@ -81,5 +89,6 @@ type InvalidTypeError struct {
 }
 
 func (err *InvalidTypeError) Error() string {
-	return "invalid type: " + err.Path
+	return fmt.Sprintf("invalid type: %s: expected %s, got %s",
+		err.Path, err.Expected.String(), err.Got)
 }

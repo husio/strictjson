@@ -38,7 +38,14 @@ func unmarshal(b []byte, dest reflect.Value, path string) Errors {
 	switch kind {
 	case reflect.Struct:
 		return unmarshalStruct(b, dest, path)
-	case reflect.Slice, reflect.Map, reflect.String, reflect.Int, reflect.Int32, reflect.Int64:
+	case
+		reflect.Slice,
+		reflect.Map,
+		reflect.String,
+		reflect.Int, reflect.Int32, reflect.Int64,
+		reflect.Uint, reflect.Uint32, reflect.Uint64,
+		reflect.Float32, reflect.Float64:
+
 		if err := json.Unmarshal(b, dest.Interface()); err != nil {
 			if e, ok := err.(*json.UnmarshalTypeError); ok {
 				return errs.WithInvalidType(path, e.Value, e.Type)
