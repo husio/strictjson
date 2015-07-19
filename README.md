@@ -20,19 +20,30 @@ structure expectations.
 
 ## Validation
 
-Every non-pointer field is required. This means that to unmarshal JSON data,
-type compatible non zero value must be provided. All fields with `json` tag
-`omitempty` are not required as they were pointer types.
+All non-pointer fields are required. All pointer fields  and fields with
+`json` tag `omitempty` are optional (value is not required).
 
-Empty containers (slice, map) is considered empty value.
+Empty containers (slice, map) are considered empty value. Value for container
+of pointers is optional (not required) while at least one element for
+container of non pointer values must be provided.
 
-Container of pointer values is not required while at least one element for
-container of non pointer values must provided to successfully unmarshal.
+To unmarshal JSON data, type compatible non zero value must be provided for
+all required fields.
 
 
+```go
+type User struct {
+    FirstName    string                        // required
+    LastName     string    `json:",omitempty"` // not required
+    Nickname     *string                       // not required
+    Hobby        []*string                     // not required
+    LuckyNumbers []int64                       // required
+    FavColors    []string  `json:",omitempty"` // not required
+}
+```
 
-Although package provides strict type checking, it does not validate
-unmarshaled content. Any data validation must be done manually.
+Although package provides strict type and data existence checking, it does not
+validate unmarshaled content. Any data validation must be done manually.
 
 
 ## TODO
@@ -40,5 +51,5 @@ unmarshaled content. Any data validation must be done manually.
 * [ ] Tests
 * [ ] Allow root value to be any type, not only `struct`
 * [ ] Documentation & examples
-* [ ] Basic validation through tags
-* [ ] Benchmarks
+* [ ] Basic validation through tags (`min`, `max`)
+* [ ] Benchmarks & comparison with plain `encoding/json`
