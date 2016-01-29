@@ -201,3 +201,75 @@ func int64Ptr(i int64) *int64 {
 func uint64Ptr(ui uint64) *uint64 {
 	return &ui
 }
+
+func BenchmarkUnmarshalStdlibSmall(b *testing.B) { benchmarkUnmarshalSmall(b, json.Unmarshal) }
+func BenchmarkUnmarshalStdlibBig(b *testing.B)   { benchmarkUnmarshalBig(b, json.Unmarshal) }
+func BenchmarkUnmarshalStrictSmall(b *testing.B) { benchmarkUnmarshalSmall(b, Unmarshal) }
+func BenchmarkUnmarshalStrictBig(b *testing.B)   { benchmarkUnmarshalBig(b, Unmarshal) }
+
+type unmarshalFn interface{}
+
+func benchmarkUnmarshal(b *testing.B, data interface{}, fn unmarshalFn) {
+	raw, err := json.Marshal(data)
+	if err != nil {
+		b.Fatalf("cannot serialize data: %s", err)
+	}
+
+	if unmarshal, ok := fn.(func([]byte, interface{}) error); ok {
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if err := unmarshal(raw, data); err != nil {
+				b.Fatalf("cannot unmarshal: %s", err)
+			}
+		}
+	} else {
+		unmarshal := fn.(func([]byte, interface{}) Errors)
+		b.ResetTimer()
+		for i := 0; i < b.N; i++ {
+			if errs := unmarshal(raw, data); errs != nil {
+				for _, err := range errs {
+					b.Errorf("unmarshal: %s", err)
+				}
+				b.Fatalf("cannot unmarshal: %s", errs)
+			}
+		}
+	}
+}
+
+func benchmarkUnmarshalSmall(b *testing.B, fn unmarshalFn) {
+	var data = struct {
+		Name string
+		Age  int
+		Tags []string
+	}{
+		Name: "Bob Ross",
+		Age:  84,
+		Tags: []string{"foo", "bar", "baz"},
+	}
+	benchmarkUnmarshal(b, &data, fn)
+}
+
+func benchmarkUnmarshalBig(b *testing.B, fn unmarshalFn) {
+	type Person struct {
+		Name     string
+		Age      int
+		Tags     []string
+		FavColor *string
+	}
+	var data = struct {
+		Name  string
+		Size  float64
+		Owner *Person `json:",omitempty"`
+		Users []Person
+	}{
+		Name:  "Gym",
+		Size:  4212.2,
+		Owner: nil,
+		Users: []Person{
+			{"Bob", 42, []string{"foo"}, nil},
+			{"Rob", 41, []string{"bar"}, nil},
+			{"Roy", 41, []string{"baz"}, nil},
+		},
+	}
+	benchmarkUnmarshal(b, &data, fn)
+}
